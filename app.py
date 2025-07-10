@@ -1,19 +1,16 @@
+import os
+import json
+import pandas as pd
 import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 from flask import Flask, request, jsonify
 from datetime import datetime
-from oauth2client.service_account import ServiceAccountCredentials
 
-app = Flask(__name__)
-
-# ✅ Correct scope for Google Sheets & Drive access (don't use your sheet URL here)
-scope = [
-    "https://spreadsheets.google.com/feeds",
-    "https://www.googleapis.com/auth/drive"
-]
-
-# 🔁 Use your actual service account JSON filename here
-creds = ServiceAccountCredentials.from_json_keyfile_name("bluewhale-license-f2f58bdcb5c1.json", scope)
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+service_account_info = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
+creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
 client = gspread.authorize(creds)
+
 
 # ✅ Open the Google Sheet named "Heart", then Sheet1
 sheet = client.open("Heart").worksheet("Sheet1")
