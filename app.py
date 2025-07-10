@@ -6,11 +6,14 @@ from oauth2client.service_account import ServiceAccountCredentials
 from flask import Flask, request, jsonify
 from datetime import datetime
 
+# ✅ Define the Flask app first
+app = Flask(__name__)
+
+# ✅ Google Sheets authorization
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 service_account_info = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
 creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
 client = gspread.authorize(creds)
-
 
 # ✅ Open the Google Sheet named "Heart", then Sheet1
 sheet = client.open("Heart").worksheet("Sheet1")
