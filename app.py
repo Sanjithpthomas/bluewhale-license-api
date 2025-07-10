@@ -1,33 +1,42 @@
+import gspread
 from flask import Flask, request, jsonify
-import pandas as pd
+from datetime import datetime
+from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 
-# Replace this with your actual published Google Sheet CSV link
-SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1WlPAkDRvKVEt-j_Ae4C7dJGmKheEdq35i7Ih1BP-Fco/edit?usp=sharing"
+# ✅ Correct scope for Google Sheets & Drive access (don't use your sheet URL here)
+scope = [
+    "https://spreadsheets.google.com/feeds",
+    "https://www.googleapis.com/auth/drive"
+]
+
+# 🔁 Use your actual service account JSON filename here
+creds = ServiceAccountCredentials.from_json_keyfile_name("bluewhale-license-f2f58bdcb5c1.json", scope)
+client = gspread.authorize(creds)
+
+# ✅ Open the Google Sheet named "Heart", then Sheet1
+sheet = client.open("Heart").worksheet("Sheet1")
 
 @app.route("/validate", methods=["POST"])
 def validate():
-    key = request.json.get("license_key", "").strip()
-    if not key:
-        return jsonify({"status": "error", "message": "No key provided"}), 400
+    license_key = request.json.get("license_key", "").strip()
+    if not license_key:
+        return jsonify({"status": "error", "message": "License key missing"}), 400
 
-    try:
-        df = pd.read_csv(SHEET_CSV_URL)
-        row = df[df["LicenseKey"].str.strip() == key]
+    data = sheet.get_all_records()
 
-        if row.empty:
-            return jsonify({"status": "invalid", "message": "Invalid license"}), 401
+    for row in data:
+        if row.get("LicenseKey") == license_key:
+            expiry = row.get("ExpiryDate")
+            if expiry:
+                try:
+                    expiry_date = datetime.strptime(expiry, "%Y-%m-%d").date()
+                    return jsonify({"status": "valid", "expiry": str(expiry_date)})
+                except Exception as e:
+                    return jsonify({"status": "error", "message": f"Invalid expiry format: {e}"}), 500
 
-        expiry = pd.to_datetime(row.iloc[0]["ExpiryDate"]).date()
-        today = pd.Timestamp.now().date()
-
-        if today > expiry:
-            return jsonify({"status": "expired", "expiry": str(expiry)}), 403
-
-        return jsonify({"status": "valid", "expiry": str(expiry)})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+    return jsonify({"status": "invalid", "message": "License key not found"}), 404
 
 if __name__ == "__main__":
     app.run()
