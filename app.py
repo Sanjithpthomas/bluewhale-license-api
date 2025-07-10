@@ -4,10 +4,12 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from flask import Flask, request, jsonify
+from calculate_api import calculate_bp
 from datetime import datetime
 
 # ✅ Define the Flask app first
 app = Flask(__name__)
+app.register_blueprint(calculate_bp)
 
 # ✅ Google Sheets authorization
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
