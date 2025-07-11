@@ -28,16 +28,23 @@ client = gspread.authorize(creds)
 sheet = client.open("Heart").worksheet("Sheet1")
 
 # ✅ License key validation route
-@app.route("/validate", methods=["POST"])
-def validate():
+@app.route("/check", methods=["POST"])  # <-- make sure this is /check, not /validate
+def check():
     license_key = request.json.get("license_key", "").strip()
     if not license_key:
         return jsonify({"status": "error", "message": "License key missing"}), 400
 
     try:
         data = sheet.get_all_records()
+
+        # ✅ DEBUG PRINT STATEMENTS
+        print("License Key Received:", license_key)
+        print("Sheet Data:", data)
+
         for row in data:
-            if row.get("LicenseKey") == license_key:
+            print("Checking row:", row)
+            print("Comparing:", row.get("LicenseKey", "").strip(), "==", license_key)
+            if row.get("LicenseKey", "").strip() == license_key:
                 expiry = row.get("ExpiryDate")
                 if expiry:
                     expiry_date = datetime.strptime(expiry, "%Y-%m-%d").date()
