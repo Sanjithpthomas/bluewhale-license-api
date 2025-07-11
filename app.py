@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import pandas as pd
 import gspread
@@ -37,21 +38,29 @@ def check():
     try:
         data = sheet.get_all_records()
 
-        # ✅ DEBUG PRINTS
+        # ✅ DEBUG PRINTS with flush
         print("License Key Received:", license_key)
+        sys.stdout.flush()
         print("Sheet Data:", data)
+        sys.stdout.flush()
 
         for row in data:
             print("Checking row:", row)
+            sys.stdout.flush()
             print("Comparing:", row.get("LicenseKey", "").strip(), "==", license_key)
+            sys.stdout.flush()
+
             if row.get("LicenseKey", "").strip() == license_key:
                 expiry = row.get("ExpiryDate")
                 if expiry:
                     expiry_date = datetime.strptime(expiry, "%Y-%m-%d").date()
                     return jsonify({"status": "valid", "expiry": str(expiry_date)})
+        
         return jsonify({"status": "invalid", "message": "License key not found"}), 404
 
     except Exception as e:
+        print("Exception occurred:", e)
+        sys.stdout.flush()
         return jsonify({"status": "error", "message": f"Validation failed: {e}"}), 500
 
 # ✅ Run app locally (only used in local testing, Render uses gunicorn)
