@@ -71,3 +71,15 @@ def calculate():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@calculate_bp.route("/check", methods=["POST"])
+def check_license():
+    data = request.json
+    key = data.get("key")
+
+    # You can replace this check with actual logic if needed
+    if key == "VALIDKEY":
+        return jsonify({"status": "valid"})
+    else:
+        return jsonify({"status": "invalid"})
+
