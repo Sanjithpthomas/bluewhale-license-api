@@ -21,7 +21,16 @@ scope = [
 ]
 
 # ✅ Load credentials from environment variable
-service_account_info = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
+raw_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", "")
+print("===== RAW JSON from ENV (first 200 chars) =====")
+print(repr(raw_json[:200]))  # Print first 200 chars safely
+print("================================================")
+try:
+    service_account_info = json.loads(raw_json)
+except Exception as e:
+    print("JSON LOAD ERROR:", e)
+    return jsonify({"status": "invalid", "error": str(e)})
+
 creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
 client = gspread.authorize(creds)
 
