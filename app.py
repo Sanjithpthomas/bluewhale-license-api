@@ -28,7 +28,7 @@ client = gspread.authorize(creds)
 sheet = client.open("Heart").worksheet("Sheet1")
 
 # ✅ License key validation route
-@app.route("/check", methods=["POST"])  # <-- make sure this is /check, not /validate
+@app.route("/check", methods=["POST"])
 def check():
     license_key = request.json.get("license_key", "").strip()
     if not license_key:
@@ -37,7 +37,7 @@ def check():
     try:
         data = sheet.get_all_records()
 
-        # ✅ DEBUG PRINT STATEMENTS
+        # ✅ DEBUG PRINTS
         print("License Key Received:", license_key)
         print("Sheet Data:", data)
 
