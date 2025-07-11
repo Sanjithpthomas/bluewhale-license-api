@@ -37,19 +37,17 @@ def check():
 
     try:
         data = sheet.get_all_records()
+        print("Fetched rows from sheet:", data)
+        sys.stdout.flush()
 
-        # ✅ DEBUG PRINTS with flush
-        print("License Key Received:", license_key)
-        sys.stdout.flush()
-        print("Sheet Data:", data)
-        sys.stdout.flush()
+        if not data:
+            print("❗ No data found in the sheet")
+            sys.stdout.flush()
+            return jsonify({"status": "error", "message": "Google Sheet is empty"}), 500
 
         for row in data:
-            print("Checking row:", row)
+            print("Checking:", row)
             sys.stdout.flush()
-            print("Comparing:", row.get("LicenseKey", "").strip(), "==", license_key)
-            sys.stdout.flush()
-
             if row.get("LicenseKey", "").strip() == license_key:
                 expiry = row.get("ExpiryDate")
                 if expiry:
@@ -59,7 +57,7 @@ def check():
         return jsonify({"status": "invalid", "message": "License key not found"}), 404
 
     except Exception as e:
-        print("Exception occurred:", e)
+        print("❌ Exception:", e)
         sys.stdout.flush()
         return jsonify({"status": "error", "message": f"Validation failed: {e}"}), 500
 
