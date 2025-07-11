@@ -1,14 +1,17 @@
 import os
 import json
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+import pandas as pd
 from flask import Flask, request, jsonify
-from calculate_api import calculate_bp
+from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
+from calculate_api import calculate_bp
 
+# ✅ Initialize Flask app
 app = Flask(__name__)
 app.register_blueprint(calculate_bp)
 
+# ✅ Google Sheets authorization setup
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive"
@@ -26,27 +29,28 @@ try:
     client = gspread.authorize(creds)
     sheet = client.open("Heart").worksheet("Sheet1")
 except Exception as e:
-    print("❌ ERROR while loading credentials or sheet:", e)
-    sheet = None  # prevent crashing, respond in route
+    print("❌ ERROR loading credentials or opening sheet:", str(e))
+    sheet = None  # Prevent crash, handle below
 
+# ✅ License key validation route
 @app.route("/check", methods=["POST"])
 def check():
+    if not sheet:
+        return jsonify({"status": "error", "message": "Sheet not initialized"}), 500
+
     license_key = request.json.get("license_key", "").strip()
-    print("Received license key:", repr(license_key))
+    print("🟢 Received license key:", repr(license_key))
 
     if not license_key:
         return jsonify({"status": "error", "message": "License key missing"}), 400
-
-    if sheet is None:
-        return jsonify({"status": "error", "message": "Sheet not available"}), 500
 
     try:
         data = sheet.get_all_records()
         for row in data:
             sheet_key = row.get("LicenseKey", "").strip()
-            print("Checking row:", row)
-            print("→ Sheet Key:", repr(sheet_key))
-            print("→ Input Key:", repr(license_key))
+            print("🔍 Checking row:", row)
+            print("→ From Sheet:", repr(sheet_key))
+            print("→ From User :", repr(license_key))
 
             if sheet_key == license_key:
                 expiry = row.get("ExpiryDate")
@@ -58,6 +62,6 @@ def check():
     except Exception as e:
         return jsonify({"status": "error", "message": f"Validation failed: {e}"}), 500
 
-# Local run
+# ✅ Local dev only
 if __name__ == "__main__":
     app.run()
