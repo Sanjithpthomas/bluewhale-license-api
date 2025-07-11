@@ -32,33 +32,28 @@ sheet = client.open("Heart").worksheet("Sheet1")
 @app.route("/check", methods=["POST"])
 def check():
     license_key = request.json.get("license_key", "").strip()
+    print("Received license key:", repr(license_key))  # 🟢 DEBUG PRINT
+
     if not license_key:
         return jsonify({"status": "error", "message": "License key missing"}), 400
 
     try:
         data = sheet.get_all_records()
-        print("Fetched rows from sheet:", data)
-        sys.stdout.flush()
-
-        if not data:
-            print("❗ No data found in the sheet")
-            sys.stdout.flush()
-            return jsonify({"status": "error", "message": "Google Sheet is empty"}), 500
-
         for row in data:
-            print("Checking:", row)
-            sys.stdout.flush()
-            if row.get("LicenseKey", "").strip() == license_key:
+            sheet_key = row.get("LicenseKey", "").strip()
+            print("Checking row:", row)  # 🟢 DEBUG
+            print("Comparing license keys:")
+            print("→ From Sheet:", repr(sheet_key))
+            print("→ From User :", repr(license_key))
+
+            if sheet_key == license_key:
                 expiry = row.get("ExpiryDate")
                 if expiry:
                     expiry_date = datetime.strptime(expiry, "%Y-%m-%d").date()
                     return jsonify({"status": "valid", "expiry": str(expiry_date)})
-        
         return jsonify({"status": "invalid", "message": "License key not found"}), 404
 
     except Exception as e:
-        print("❌ Exception:", e)
-        sys.stdout.flush()
         return jsonify({"status": "error", "message": f"Validation failed: {e}"}), 500
 
 # ✅ Run app locally (only used in local testing, Render uses gunicorn)
