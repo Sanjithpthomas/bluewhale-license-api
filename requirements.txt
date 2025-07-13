@@ -4,5 +4,6 @@ gunicorn
 gspread
 oauth2client
 yfinance
-
+numpy
+python-dotenv
 
